@@ -1,16 +1,257 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Panel</title>
-    <link rel="stylesheet" type="text/css" href="style.css">
-    
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+    <style>
+        /* Define a class for the data entries */
+        .data-container {
+            border: 1px solid #ccc;
+            padding: 5px;
+            margin: 10px;
+        }
+
+        /* Style the image */
+        .data-image {
+
+            height: 100px;
+            width: 100px;
+        }
+
+        /* Style the text information */
+        .text-div {
+            margin-top: 10px;
+            margin-left: 20px;
+        }
+
+        /* Style the inner data container (image and text) */
+        .inner-data-container {
+            display: flex;
+            flex-direction: row;
+            /* Horizontal alignment */
+            justify-content: flex-start;
+            /* Space between image and text */
+            align-items: center;
+            /* Vertically centered */
+        }
+
+        .button-div {
+            display: flex;
+            flex-direction: row;
+            width: 100px;
+            margin-top: 10px;
+        }
+
+        .button-div button {
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+            margin-right: 10px;
+            border-radius: 5px;
+            /* Rounded corners for buttons */
+        }
+
+        .button-div button.accept {
+            background-color: #4CAF50;
+            /* Green background for Accept button */
+            color: white;
+        }
+
+        .button-div button.decline {
+            background-color: #FF5733;
+            /* Red background for Decline button */
+            color: white;
+        }
+
+        .button-div button:last-child {
+            margin-right: 0;
+        }
+
+        .button-div button:hover {
+            opacity: 0.9;
+            /* Slight opacity on hover for a visual effect */
+        }
+
+        .col-sm-12 {
+            align-items: center;
+        }
+    </style>
 </head>
-<body style="align-items:start;">
 
-    <h1>Database Contents</h1>
+<body style="background-color: rgb(206, 208, 210);">
 
-    <script type="module" src="firebase-config.js"></script>
+    <div class="col-sm-6"
+        style="border: 1px solid gray; border-radius: 8px; margin: 10px;max-height: 700px;width: 600px; overflow-y: hidden;">
+        <h2 style="text-align: center;font-weight: bold;">Fire Data Show</h2>
+        <div class="row">
+            <div class="col-sm-12"
+                style="display: flex;font-weight: bold;font-size: 20px; justify-content: center; background-color: #ffdc5c; padding: 10px;">
+                Fire Location
+            </div>
+        </div>
+        <div id="datas" style="max-height: 500px; overflow-y: auto;">
+            <div id="showUsers" class="data-container"></div>
+        </div>
+
+    </div>
+    <div id="destination"></div>
+    <script type="module">
+
+        //----------------------------Firease---------------------------------------------//
+
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-analytics.js";
+        import { getDatabase, ref, child, onValue, get, remove } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-database.js";
+        import { getStorage, ref as storageRef, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-storage.js";
+        // TODO: Add SDKs for Firebase products that you want to use
+        // https://firebase.google.com/docs/web/setup#available-libraries
+
+        // Your web app's Firebase configuration
+        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+        const firebaseConfig = {
+            apiKey: "AIzaSyAgsVfcrTChE7ZEW9IQWWsw5cgPnhzgKU8",
+            authDomain: "fire-detect-37214.firebaseapp.com",
+            databaseURL: "https://fire-detect-37214-default-rtdb.firebaseio.com",
+            projectId: "fire-detect-37214",
+            storageBucket: "fire-detect-37214.appspot.com",
+            messagingSenderId: "440410504810",
+            appId: "1:440410504810:web:b9969b29008bfacd035413",
+            measurementId: "G-9EQNNG7JV9"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        // Initialize Cloud Storage and get a reference to the service
+        const storage = getStorage(app);
+        // Initialize Realtime Database and get a reference to the service
+        const db = getDatabase();
+        const fireImagesRef = ref(getDatabase(), 'fireimages');
+
+
+        function createDataDiv(data, uniqueKey) {
+            const dataContainer = document.createElement('div');
+            dataContainer.className = 'data-container';
+
+            const dataDiv = document.createElement('div');
+            dataDiv.className = 'inner-data-container';
+
+            const image = document.createElement('img');
+            image.className = 'data-image';
+
+            // Retrieve and set the image source from Firebase Storage
+            const imageRef = storageRef(storage, 'images/' + data.imgname);
+            getDownloadURL(imageRef)
+                .then((url) => {
+                    image.src = url;
+                })
+                .catch((error) => {
+                    console.error("Error getting image URL:", error);
+                });
+
+            const textDiv = document.createElement('div');
+            textDiv.className = 'text-div';
+            textDiv.innerHTML = `
+        <strong>Address:</strong> ${data.address}<br>
+        <strong>City:</strong> ${data.city}<br>
+        <strong>Country:</strong> ${data.country}<br>
+        <strong>Latitude:</strong> ${data.lati}<br>
+        <strong>Longitude:</strong> ${data.longi}<br>
+        <strong>Longitude:</strong> ${uniqueKey}<br>
+    `;
+
+            const buttonDiv = document.createElement('div');
+            buttonDiv.className = 'button-div';
+
+            const acceptButton = document.createElement('button');
+            acceptButton.textContent = 'Accept';
+            acceptButton.className = 'accept'; // Assign the "accept" class
+            acceptButton.addEventListener('click', () => {
+                // Handle accept logic here, you can use uniqueKey to identify the data entry
+                showDataInDiv(data);
+            });
+
+            const declineButton = document.createElement('button');
+            declineButton.textContent = 'Decline';
+            declineButton.className = 'decline'; // Assign the "decline" class
+            declineButton.addEventListener('click', () => {
+                // Handle decline logic here, you can use uniqueKey to identify the data entry
+                removeData(uniqueKey, data.imgname);
+            });
+            function showDataInDiv(data) {
+                const divToShowData = document.getElementById('destination');
+                // Create HTML content to display the data
+                const content = `
+        <strong>Address:</strong> ${data.address}<br>
+        <strong>City:</strong> ${data.city}<br>
+        <strong>Country:</strong> ${data.country}<br>
+        <strong>Latitude:</strong> ${data.lati}<br>
+        <strong>Longitude:</strong> ${data.longi}<br>
+    `;
+                divToShowData.innerHTML = content;
+            }
+            function removeData(uniqueKey, imgName) {
+                // Remove data from Firebase
+                const dataRef = child(fireImagesRef, uniqueKey);
+                remove(dataRef)
+                    .then(() => {
+                        console.log('Data removed from Firebase');
+                    })
+                    .catch((error) => {
+                        console.error('Error removing data from Firebase:', error);
+                    });
+
+                // Remove image from storage
+                const imageRef = storageRef(storage, 'images/' + imgName);
+                deleteObject(imageRef)
+                    .then(() => {
+                        console.log('Image removed from storage');
+                    })
+                    .catch((error) => {
+                        console.error('Error removing image from storage:', error);
+                    });
+            }
+            buttonDiv.appendChild(acceptButton);
+            buttonDiv.appendChild(declineButton);
+
+            dataDiv.appendChild(image);
+            dataDiv.appendChild(textDiv);
+
+            dataContainer.appendChild(dataDiv);
+            dataContainer.appendChild(buttonDiv);
+
+            return dataContainer;
+        }
+
+
+
+        // Function to retrieve and display data
+        function retrieveAndDisplayData() {
+            onValue(fireImagesRef, (snapshot) => {
+                // Clear the existing content
+                const container = document.getElementById('showUsers');
+                container.innerHTML = '';
+
+                // Loop through the data and display it
+                snapshot.forEach((childSnapshot) => {
+                    const data = childSnapshot.val();
+                    const uniqueKey = childSnapshot.key;
+                    const dataDiv = createDataDiv(data, uniqueKey);
+                    container.appendChild(dataDiv);
+
+                });
+            });
+        }
+
+        // Call the function to retrieve and display data when the page loads
+        window.onload = retrieveAndDisplayData;
+    </script>
 </body>
+
 </html>
