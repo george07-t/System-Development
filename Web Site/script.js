@@ -1,10 +1,4 @@
-
-        
-
         //login
-// Import Firebase modules and initialize Firebase app (from your firebase-config.js)
-
-// Wait for the page to load
 window.addEventListener('load', () => {
     // Get a reference to the login form
     const loginForm = document.getElementById('login-form');

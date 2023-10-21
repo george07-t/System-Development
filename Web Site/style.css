@@ -1,45 +1,84 @@
 body {
     font-family: Arial, sans-serif;
-    background-color: #dcd5d5;
+    background-color: #f0f0f0;
     margin: 0;
-    padding: 0;
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
+    min-height: 100vh;
 }
-
+.background-image {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('Screenshot\ \(602\).png');
+    background-size: cover;
+    filter: blur(3px); /* Adjust the blur intensity as needed */
+    z-index: -1;
+}
 .login-container {
-    background: #fff;
-    border-radius: 5px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    text-align: center;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
     padding: 20px;
-    width: 300px;
+    text-align: center;
+    max-width: 400px;
+    width: 90%;
 }
 
 h2 {
-    margin-top: 0;
+    font-size: 24px;
+    color: #333;
+    margin-bottom: 20px;
 }
 
-input {
+label {
+    display: block;
+    font-weight: bold;
+    margin: 10px 0;
+    color: #555;
+}
+
+input[type="text"],
+input[type="password"] {
     width: 100%;
     padding: 10px;
-    margin: 10px 10px 10px 10px;
+    margin: 5px 0;
     border: 1px solid #ccc;
     border-radius: 5px;
-    outline: none;
+    box-sizing: border-box; /* This ensures the input width includes padding and borders */
 }
 
+
 button {
-    background: #007BFF;
+    width: 100%;
+    padding: 10px;
+    background: #ff6600;
     color: #fff;
     border: none;
     border-radius: 5px;
-    padding: 10px 20px;
     cursor: pointer;
+    transition: background 0.3s;
+    margin-top: 20px;
 }
 
 button:hover {
-    background: #0056b3;
+    background: #ff9933;
+}
+
+.info {
+    text-align: center;
+    margin-top: 20px;
+}
+
+a {
+    color: #ff6600;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
 }

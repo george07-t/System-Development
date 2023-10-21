@@ -11,9 +11,10 @@
     <style>
         /* Define a class for the data entries */
         .data-container {
-            border: 1px solid #ccc;
+            border: 1px solid #000000;
             padding: 5px;
             margin: 10px;
+            background-color: #c16222;
         }
 
         /* Style the image */
@@ -80,13 +81,39 @@
         .col-sm-12 {
             align-items: center;
         }
+
+        .destination {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            border: 1px solid gray;
+            border-radius: 8px;
+            padding: 10px;
+            background-color: #fff;
+            max-height: 300px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .destination button {
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+            margin-right: 10px;
+            border-radius: 5px;
+        }
+
+        .destination button.done-button {
+            background-color: #4CAF50;
+            color: white;
+        }
     </style>
 </head>
 
 <body style="background-color: rgb(206, 208, 210);">
 
     <div class="col-sm-6"
-        style="border: 1px solid gray; border-radius: 8px; margin: 10px;max-height: 700px;width: 600px; overflow-y: hidden;">
+        style="border: 1px solid gray; border-radius: 8px;background-color: rgb(195, 171, 171); margin: 10px;max-height: 700px;width: 500px; overflow-y: hidden;position: absolute; top: 10px; right: 10px;">
         <h2 style="text-align: center;font-weight: bold;">Fire Data Show</h2>
         <div class="row">
             <div class="col-sm-12"
@@ -99,7 +126,10 @@
         </div>
 
     </div>
-    <div id="destination"></div>
+    <div id="destination" class="destination">
+
+
+    </div>
     <script type="module">
 
         //----------------------------Firease---------------------------------------------//
@@ -163,7 +193,6 @@
         <strong>Country:</strong> ${data.country}<br>
         <strong>Latitude:</strong> ${data.lati}<br>
         <strong>Longitude:</strong> ${data.longi}<br>
-        <strong>Longitude:</strong> ${uniqueKey}<br>
     `;
 
             const buttonDiv = document.createElement('div');
@@ -186,8 +215,10 @@
             });
             function showDataInDiv(data) {
                 const divToShowData = document.getElementById('destination');
+                divToShowData.style.display = 'block';
                 // Create HTML content to display the data
                 const content = `
+                <h4><strong>Destination</strong></h4>
         <strong>Address:</strong> ${data.address}<br>
         <strong>City:</strong> ${data.city}<br>
         <strong>Country:</strong> ${data.country}<br>
@@ -195,6 +226,19 @@
         <strong>Longitude:</strong> ${data.longi}<br>
     `;
                 divToShowData.innerHTML = content;
+                const doneButton = document.createElement('button');
+                doneButton.id = 'doneButton';
+                doneButton.textContent = 'Done';
+                doneButton.className = 'done-button';
+                doneButton.addEventListener('click', () => {
+                    // Handle the "Done" button click event here
+                    // For example, you can remove the data or perform any other action
+
+                    divToShowData.style.display = 'none';
+                });
+
+                // Add the "Done" button to the div
+                divToShowData.appendChild(doneButton);
             }
             function removeData(uniqueKey, imgName) {
                 // Remove data from Firebase
