@@ -117,10 +117,16 @@
     </div>
     <div id="destination" class="destination">
 
+        <audio id="alertSound" hidden>
+            <source src="Fire Alarm.mp3" type="audio/mpeg">
+            Your browser does not support the audio element.
+        </audio>
 
 
     </div>
     <script type="module">
+        let isTrue = false;
+        let dec = false;
         window.addEventListener('beforeunload', function (e) {
 
             var confirmationMessage = 'You have unsaved changes. Are you sure you want to leave this page?';
@@ -218,7 +224,7 @@
             declineButton.textContent = 'Decline';
             declineButton.className = 'decline';
             declineButton.addEventListener('click', () => {
-
+                dec = true;
                 removeData(uniqueKey, data.imgname);
             });
 
@@ -329,14 +335,37 @@
             onValue(fireImagesRef, (snapshot) => {
                 const container = document.getElementById('showUsers');
                 container.innerHTML = '';
+
+                // Convert the snapshot to an array
+                const dataArr = [];
                 snapshot.forEach((childSnapshot) => {
                     const data = childSnapshot.val();
                     const uniqueKey = childSnapshot.key;
+                    dataArr.push({ data, uniqueKey });
+                });
+                if (isTrue) {
+                    if (!dec) {
+                        const alertSound = document.getElementById('alertSound');
+                        alertSound.play();
+                        alert('New data has been added!');
+
+                    }
+                    dec = false;
+                }
+
+                // Reverse the array
+                dataArr.reverse();
+
+                // Append the items in the reversed order
+                dataArr.forEach(({ data, uniqueKey }) => {
                     const dataDiv = createDataDiv(data, uniqueKey);
                     container.appendChild(dataDiv);
                 });
+                isTrue = true;
             });
+
         }
+
         window.onload = retrieveAndDisplayData;
     </script>
 </body>
