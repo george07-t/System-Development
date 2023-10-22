@@ -127,6 +127,7 @@
     <script type="module">
         let isTrue = false;
         let dec = false;
+        let dn = false;
         window.addEventListener('beforeunload', function (e) {
 
             var confirmationMessage = 'You have unsaved changes. Are you sure you want to leave this page?';
@@ -247,6 +248,7 @@
                 doneButton.textContent = 'Done';
                 doneButton.className = 'done-button';
                 doneButton.addEventListener('click', () => {
+                    dn = true;
                     const isTaskDone = confirm('Is the task done?');
                     if (isTaskDone) {
                         divToShowData.style.display = 'none';
@@ -329,7 +331,10 @@
 
             return dataContainer;
         }
-
+        const alertSound = document.getElementById('alertSound');
+        function playAlertSound() {
+            alertSound.play();
+        }
         //retrieve data from firebase
         function retrieveAndDisplayData() {
             onValue(fireImagesRef, (snapshot) => {
@@ -345,14 +350,16 @@
                 });
                 if (isTrue) {
                     if (!dec) {
-                        const alertSound = document.getElementById('alertSound');
-                        alertSound.play();
-                        alert('New data has been added!');
+                        if (!dn) {
 
+                            playAlertSound();
+                            alert('New data has been added!');
+                        }
                     }
                     dec = false;
+                    dn = false;
                 }
-
+                alertSound.pause();
                 // Reverse the array
                 dataArr.reverse();
 
