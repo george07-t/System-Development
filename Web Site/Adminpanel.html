@@ -96,6 +96,53 @@
             background-color: #4CAF50;
             color: white;
         }
+
+        .button-container {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            width: 100%;
+        }
+
+        .top-button {
+            margin-bottom: 10px;
+            width: 100px;
+            /* Add some spacing between the top button and the side buttons */
+        }
+
+        .side-buttons {
+            display: flex;
+            justify-content: center;
+        }
+
+        .side-button {
+            width: 100px;
+            margin: 0 20px;
+            /* Adjust the width of the side buttons as needed */
+        }
+
+        .bottom-button {
+            margin-top: 10px;
+            width: 100px;
+            /* Add some spacing between the bottom button and the side buttons */
+        }
+
+        .button-container button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #007BFF;
+            color: #fff;
+            border: black;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        .button-container button:hover {
+            background-color: #0056b3;
+        }
     </style>
 </head>
 
@@ -119,12 +166,77 @@
 
         <audio id="alertSound" hidden>
             <source src="Fire Alarm.mp3" type="audio/mpeg">
-            Your browser does not support the audio element.
+
         </audio>
 
 
     </div>
+    <div class="button-container">
+        <button id="forward" class="top-button">Forward</button>
+        <div class="side-buttons">
+            <button id="left" class="side-button">Left</button>
+            <button id="stop" style="background-color: #FF5733;width: 100px;">Stop</button>
+            <button id="right" class="side-button">Right</button>
+        </div>
+        <button id="backward" class="bottom-button">Backward</button>
+    </div>
+
     <script type="module">
+        //buttons to control
+        // Define functions for button click events
+        // Function to handle keyboard events
+        function handleKeyPress(event) {
+            const forwardButton = document.getElementById('forward');
+            const backwardButton = document.getElementById('backward');
+            const leftButton = document.getElementById('left');
+            const stopButton = document.getElementById('stop');
+            const rightButton = document.getElementById('right');
+
+            switch (event.key) {
+                case 'ArrowUp':
+                    forwardButton.click(); // Trigger the forward button click event
+                    break;
+                case 'ArrowDown':
+                    backwardButton.click(); // Trigger the backward button click event
+                    break;
+                case 'ArrowLeft':
+                    leftButton.click(); // Trigger the left button click event
+                    break;
+                case 'ArrowRight':
+                    rightButton.click(); // Trigger the right button click event
+                    break;
+                case ' ':
+                    stopButton.click(); // Trigger the stop button click event
+                    break;
+            }
+        }
+
+        // Attach the keypress event listener to the document
+        document.addEventListener('keydown', handleKeyPress);
+
+        document.getElementById('forward').addEventListener('click', function () {
+            // Add code to move forward
+            console.log('Forward');
+        });
+
+        document.getElementById('backward').addEventListener('click', function () {
+            // Add code to move backward
+            console.log('Backward');
+        });
+
+        document.getElementById('left').addEventListener('click', function () {
+            // Add code to move left
+            console.log('Left');
+        });
+        document.getElementById('stop').addEventListener('click', function () {
+            // Add code to move left
+            console.log('Stop');
+        });
+        document.getElementById('right').addEventListener('click', function () {
+            // Add code to move right
+            console.log('Right');
+        });
+        // others
         let isTrue = false;
         let dec = false;
         let dn = false;
