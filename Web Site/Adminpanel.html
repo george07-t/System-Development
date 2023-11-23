@@ -8,6 +8,8 @@
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+    <script async
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAUYZ4Xp1z2RKN1fvn_nz2sWLmBK-wisu8&callback=initMap&libraries=maps,marker"></script>
     <style>
         .data-container {
             border: 1px solid #000000;
@@ -103,7 +105,7 @@
             left: 50%;
             transform: translateX(-50%);
             text-align: center;
-           
+
         }
 
         .top-button {
@@ -143,11 +145,30 @@
         .button-container button:hover {
             background-color: #0056b3;
         }
+
+        #map {
+            width: 450px;
+            height: 300px;
+            position: absolute;
+            top: 0;
+            left: 0;
+            margin: auto;
+            border-color: #000000;
+            border: 2px solid black;
+        }
+        .images{
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+        }
     </style>
 </head>
 
 <body style="background-color: rgb(206, 208, 210);">
-
+    <div id="map"></div>
+    <img src="" class="images">
     <div class="col-sm-6"
         style="border: 1px solid gray; border-radius: 8px;background-color: rgb(195, 171, 171); margin: 10px;max-height: 700px;width: 500px; overflow-y: hidden;position: absolute; top: 10px; right: 10px;">
         <h2 style="text-align: center;font-weight: bold;">Fire Data Show</h2>
@@ -172,70 +193,120 @@
 
     </div>
     <div class="button-container">
-        <button id="forward" class="top-button">Forward</button>
+        <button id="forward" class="top-button" class="directionButton" data-direction="u">Forward</button>
         <div class="side-buttons">
-            <button id="left" class="side-button">Left</button>
-            <button id="stop" style="background-color: #FF5733;width: 100px;">Stop</button>
-            <button id="right" class="side-button">Right</button>
+            <button id="left" class="side-button" class="directionButton" data-direction="l">Left</button>
+            <button id="stop" style="background-color: #FF5733;width: 100px;" class="directionButton"
+                data-direction="s">Stop</button>
+            <button id="right" class="side-button" class="directionButton" data-direction="r">Right</button>
         </div>
-        <button id="backward" class="bottom-button">Backward</button>
+        <button id="backward" class="bottom-button" class="directionButton" data-direction="b">Backward</button>
     </div>
+    <!-- <script src="locationset.js"></script> -->
 
     <script type="module">
+        window.deslati = 22.8996895;
+        window.deslongi = 89.5026112;
+        //----------------------------Firease---------------------------------------------//
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-analytics.js";
+        import { getDatabase, ref, child, onValue, get, remove, push, set } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-database.js";
+        import { getStorage, ref as storageRef, getDownloadURL, deleteObject, uploadBytes } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-storage.js";
+        // TODO: Add SDKs for Firebase products that you want to use
+        // https://firebase.google.com/docs/web/setup#available-libraries
+
+        // Your web app's Firebase configuration
+        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+        const firebaseConfig = {
+            apiKey: "AIzaSyAgsVfcrTChE7ZEW9IQWWsw5cgPnhzgKU8",
+            authDomain: "fire-detect-37214.firebaseapp.com",
+            databaseURL: "https://fire-detect-37214-default-rtdb.firebaseio.com",
+            projectId: "fire-detect-37214",
+            storageBucket: "fire-detect-37214.appspot.com",
+            messagingSenderId: "440410504810",
+            appId: "1:440410504810:web:b9969b29008bfacd035413",
+            measurementId: "G-9EQNNG7JV9"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const storage = getStorage(app);
+        const db = getDatabase();
+        const fireImagesRef = ref(getDatabase(), 'fireimages');
+        const completedTasksRef = ref(getDatabase(), 'completedTasks');
+        const testRef = ref(getDatabase(), 'test');
         //buttons to control
         // Define functions for button click events
         // Function to handle keyboard events
-        function handleKeyPress(event) {
-            const forwardButton = document.getElementById('forward');
-            const backwardButton = document.getElementById('backward');
-            const leftButton = document.getElementById('left');
-            const stopButton = document.getElementById('stop');
-            const rightButton = document.getElementById('right');
+        const WS_URL = 'ws://34.93.235.72:65080'; // Update with your WebSocket server URL
+        const ws = new WebSocket(WS_URL);
 
-            switch (event.key) {
+        ws.addEventListener('open', () => {
+            console.log('WebSocket Connection Opened');
+        });
+        const img = document.querySelector('img');
+        let urlObject;
+            ws.onmessage = message => {
+                const arrayBuffer = message.data;
+                if(urlObject){
+                    URL.revokeObjectURL(urlObject);
+                }
+                urlObject = URL.createObjectURL(new Blob([arrayBuffer]));
+                img.src = urlObject;
+            }
+
+
+//butons
+        const buttons = document.querySelectorAll(".directionButton");
+        let keyIsPressed = {};
+
+        buttons.forEach(button => {
+            button.addEventListener("click", function () {
+                const direction = button.dataset.direction;
+                console.log(`Button '${direction}' clicked!`);
+            });
+        });
+
+        document.addEventListener("keydown", function (event) {
+            const direction = getDirection(event.key);
+
+            if (direction && !keyIsPressed[direction]) {
+                console.log(`Key '${direction}' pressed!`);
+                const dataToSend = direction; // Update with the data you want to send
+                ws.send(dataToSend);
+                keyIsPressed[direction] = true;
+            }
+        });
+
+        document.addEventListener("keyup", function (event) {
+            const direction = getDirection(event.key);
+
+            if (direction) {
+                console.log(`Key '${direction}' released!`);
+                const dataToSend = 's'; // Update with the data you want to send
+                 ws.send(dataToSend);
+                keyIsPressed[direction] = false;
+            }
+        });
+
+        function getDirection(key) {
+            switch (key) {
                 case 'ArrowUp':
-                    forwardButton.click(); // Trigger the forward button click event
-                    break;
+                    return 'u';
                 case 'ArrowDown':
-                    backwardButton.click(); // Trigger the backward button click event
-                    break;
+                    return 'd';
                 case 'ArrowLeft':
-                    leftButton.click(); // Trigger the left button click event
-                    break;
+                    return 'l';
                 case 'ArrowRight':
-                    rightButton.click(); // Trigger the right button click event
-                    break;
+                    return 'r';
                 case ' ':
-                    stopButton.click(); // Trigger the stop button click event
-                    break;
+                    return 's';
+                default:
+                    return null;
             }
         }
 
-        // Attach the keypress event listener to the document
-        document.addEventListener('keydown', handleKeyPress);
 
-        document.getElementById('forward').addEventListener('click', function () {
-            // Add code to move forward
-            console.log('Forward');
-        });
-
-        document.getElementById('backward').addEventListener('click', function () {
-            // Add code to move backward
-            console.log('Backward');
-        });
-
-        document.getElementById('left').addEventListener('click', function () {
-            // Add code to move left
-            console.log('Left');
-        });
-        document.getElementById('stop').addEventListener('click', function () {
-            // Add code to move left
-            console.log('Stop');
-        });
-        document.getElementById('right').addEventListener('click', function () {
-            // Add code to move right
-            console.log('Right');
-        });
         // others
         let isTrue = false;
         let dec = false;
@@ -266,33 +337,7 @@
                 }
             }
         });
-        //----------------------------Firease---------------------------------------------//
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-app.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-analytics.js";
-        import { getDatabase, ref, child, onValue, get, remove, push, set } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-database.js";
-        import { getStorage, ref as storageRef, getDownloadURL, deleteObject, uploadBytes } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-storage.js";
-        // TODO: Add SDKs for Firebase products that you want to use
-        // https://firebase.google.com/docs/web/setup#available-libraries
 
-        // Your web app's Firebase configuration
-        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-        const firebaseConfig = {
-            apiKey: "AIzaSyAgsVfcrTChE7ZEW9IQWWsw5cgPnhzgKU8",
-            authDomain: "fire-detect-37214.firebaseapp.com",
-            databaseURL: "https://fire-detect-37214-default-rtdb.firebaseio.com",
-            projectId: "fire-detect-37214",
-            storageBucket: "fire-detect-37214.appspot.com",
-            messagingSenderId: "440410504810",
-            appId: "1:440410504810:web:b9969b29008bfacd035413",
-            measurementId: "G-9EQNNG7JV9"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const analytics = getAnalytics(app);
-        const storage = getStorage(app);
-        const db = getDatabase();
-        const fireImagesRef = ref(getDatabase(), 'fireimages');
-        const completedTasksRef = ref(getDatabase(), 'completedTasks');
 
         //show request in a list of div
         function createDataDiv(data, uniqueKey) {
@@ -354,6 +399,9 @@
         <strong>Latitude:</strong> ${data.lati}<br>
         <strong>Longitude:</strong> ${data.longi}<br>
     `;
+                window.deslati = data.lati;
+                window.deslongi = data.longi;
+                initMap();
                 divToShowData.innerHTML = content;
                 const doneButton = document.createElement('button');
                 doneButton.id = 'doneButton';
@@ -486,6 +534,49 @@
         }
 
         window.onload = retrieveAndDisplayData;
+    </script>
+    <script>
+        //-------------------------------------map-----------------------------------------//
+        let request;
+        function initMap() {
+            const map = new google.maps.Map(document.getElementById('map'), {
+                center: { lat: 22.89840025, lng: 89.5041355 },
+                zoom: 25,
+            });
+            const directionsService = new google.maps.DirectionsService();
+            const directionsRenderer = new google.maps.DirectionsRenderer();
+            directionsRenderer.setMap(map);
+            const pointA = new google.maps.LatLng(window.deslati, window.deslongi);
+            const pointB = new google.maps.LatLng(22.897111, 89.502159);
+
+            // Create markers for both points
+            const markerA = new google.maps.Marker({
+                position: pointA,
+                map: map,
+                title: 'Point A',
+            });
+
+            const markerB = new google.maps.Marker({
+                position: pointB,
+                map: map,
+                title: 'Point B',
+            });
+
+            request = {
+                origin: pointA,
+                destination: pointB,
+                travelMode: google.maps.TravelMode.DRIVING,
+            };
+
+            directionsService.route(request, function (result, status) {
+                if (status == google.maps.DirectionsStatus.OK) {
+                    directionsRenderer.setDirections(result);
+                } else {
+                    console.error('Directions request failed due to ' + status);
+                }
+            });
+        }
+
     </script>
 </body>
 
