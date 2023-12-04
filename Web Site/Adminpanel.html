@@ -10,6 +10,7 @@
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
     <script async
         src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAUYZ4Xp1z2RKN1fvn_nz2sWLmBK-wisu8&callback=initMap&libraries=maps,marker"></script>
+
     <style>
         .data-container {
             border: 1px solid #000000;
@@ -71,6 +72,25 @@
 
         .col-sm-12 {
             align-items: center;
+        }
+
+        .robot {
+            position: fixed;
+            top: 310px;
+            left: 10px;
+            height: 200px;
+            width: 300px;
+            border: 1px solid gray;
+            border-radius: 8px;
+            padding-left: 10px;
+            background-color: #fff;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .robot p {
+            display: inline;
+            margin-right: 10px;
         }
 
         .destination {
@@ -156,10 +176,12 @@
             border-color: #000000;
             border: 2px solid black;
         }
-        .images{
+
+        .images {
             position: absolute;
             top: 0;
-            left: 50%;
+            left: 51%;
+            width: 650px;
             transform: translateX(-50%);
             text-align: center;
         }
@@ -167,10 +189,14 @@
 </head>
 
 <body style="background-color: rgb(206, 208, 210);">
+
     <div id="map"></div>
-    <img src="" class="images">
+    <!-- <img src="" class="images">
+    <img id="stream" class="images" src="http://192.168.180.148" crossorigin=""> -->
+    <img class="images" src="http://192.168.109.148/">
+
     <div class="col-sm-6"
-        style="border: 1px solid gray; border-radius: 8px;background-color: rgb(195, 171, 171); margin: 10px;max-height: 700px;width: 500px; overflow-y: hidden;position: absolute; top: 10px; right: 10px;">
+        style="border: 1px solid gray; border-radius: 8px;background-color: rgb(195, 171, 171); margin: 10px;max-height: 700px;width: 400px; overflow-y: hidden;position: absolute; top: 10px; right: 10px;">
         <h2 style="text-align: center;font-weight: bold;">Fire Data Show</h2>
         <div class="row">
             <div class="col-sm-12"
@@ -183,6 +209,24 @@
         </div>
 
     </div>
+    <div class="robot">
+        <h4 style="color: #FF5733;"><strong>Robot Monitoring</strong></h4>
+        <p><strong>Temperature: </strong></p>
+        <p id="temp">0</p>
+        <br>
+        <br>
+        <p><strong>Humidity: </strong></p>
+        <p id="hum">0</p>
+        <br>
+        <br>
+        <p><strong>Latitude: </strong></p>
+        <p id="lat">0</p>
+        <br>
+        <br>
+        <p><strong>Longitude: </strong></p>
+        <p id="long">0</p>
+        <br>
+    </div>
     <div id="destination" class="destination">
 
         <audio id="alertSound" hidden>
@@ -192,7 +236,8 @@
 
 
     </div>
-    <div class="button-container">
+    <!-- <div class="button-container">
+
         <button id="forward" class="top-button" class="directionButton" data-direction="u">Forward</button>
         <div class="side-buttons">
             <button id="left" class="side-button" class="directionButton" data-direction="l">Left</button>
@@ -201,12 +246,14 @@
             <button id="right" class="side-button" class="directionButton" data-direction="r">Right</button>
         </div>
         <button id="backward" class="bottom-button" class="directionButton" data-direction="b">Backward</button>
-    </div>
-    <!-- <script src="locationset.js"></script> -->
+    </div> -->
+
 
     <script type="module">
         window.deslati = 22.8996895;
         window.deslongi = 89.5026112;
+        window.slati=22.89704;
+        window.slongi=89.50208;
         //----------------------------Firease---------------------------------------------//
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-analytics.js";
@@ -234,77 +281,155 @@
         const db = getDatabase();
         const fireImagesRef = ref(getDatabase(), 'fireimages');
         const completedTasksRef = ref(getDatabase(), 'completedTasks');
-        const testRef = ref(getDatabase(), 'test');
+        const loc = ref(getDatabase(), 'Location');
+        const sens = ref(getDatabase(), 'SensorData');
+        function updateValues(temperature, humidity, latitude, longitude) {
+        document.getElementById('temp').innerHTML = temperature || 'N/A';
+        document.getElementById('hum').innerHTML = humidity || 'N/A';
+        document.getElementById('lat').innerHTML = latitude || 'N/A';
+        document.getElementById('long').innerHTML = longitude || 'N/A';
+        addMarker({ lat: parseFloat(latitude), lng: parseFloat(longitude) }, 'Source', 'blue');
+    addMarker({ lat: window.deslati, lng: window.deslongi }, 'Destination', 'red');
+
+    // Update the map center based on the new latitude and longitude
+    map.setCenter({ lat: parseFloat(latitude), lng: parseFloat(longitude) });
+    }
+        onValue(sens, (snapshot) => {
+            const sensorData = snapshot.val() || {};
+            const { Humidity, Temperature } = sensorData;
+
+            // Set up another listener for changes in the 'Location' node using onValue
+            onValue(loc, (locationSnapshot) => {
+                const locationData = locationSnapshot.val() || {};
+                const { Latitute, Longitute } = locationData;
+
+                // Update HTML elements with the fetched data
+                updateValues(Temperature, Humidity, Latitute, Longitute);
+            });
+        });
         //buttons to control
         // Define functions for button click events
         // Function to handle keyboard events
-        const WS_URL = 'ws://34.93.235.72:65080'; // Update with your WebSocket server URL
-        const ws = new WebSocket(WS_URL);
+        // const WS_URL = 'ws://34.93.235.72:65080'; // Update with your WebSocket server URL
+        // const ws = new WebSocket(WS_URL);
 
-        ws.addEventListener('open', () => {
-            console.log('WebSocket Connection Opened');
-        });
-        const img = document.querySelector('img');
-        let urlObject;
-            ws.onmessage = message => {
-                const arrayBuffer = message.data;
-                if(urlObject){
-                    URL.revokeObjectURL(urlObject);
-                }
-                urlObject = URL.createObjectURL(new Blob([arrayBuffer]));
-                img.src = urlObject;
-            }
+        // ws.addEventListener('open', () => {
+        //     console.log('WebSocket Connection Opened1');
+        // });
+        // const WS_URL1 = 'ws://34.93.235.72:65081'; // Update with your WebSocket server URL
+        // const ws1 = new WebSocket(WS_URL1);
 
+        // ws1.addEventListener('open', () => {
+        //     console.log('WebSocket Connection Opened2');
+        // });
+        // const img = document.querySelector('img');
+        // let urlObject;
+        // ws.onmessage = message => {
 
-//butons
-        const buttons = document.querySelectorAll(".directionButton");
-        let keyIsPressed = {};
+        //     const arrayBuffer = message.data;
+        //     if (urlObject) {
+        //         URL.revokeObjectURL(urlObject);
+        //     }
+        //     urlObject = URL.createObjectURL(new Blob([arrayBuffer]));
+        //     img.src = urlObject;
+        // }
 
-        buttons.forEach(button => {
-            button.addEventListener("click", function () {
-                const direction = button.dataset.direction;
-                console.log(`Button '${direction}' clicked!`);
-            });
-        });
+        // //butons
+        // const backwardButton = document.getElementById("backward");
 
-        document.addEventListener("keydown", function (event) {
-            const direction = getDirection(event.key);
+        // backwardButton.addEventListener("mousedown", () => {
+        //     ws1.send('d');
+        // });
 
-            if (direction && !keyIsPressed[direction]) {
-                console.log(`Key '${direction}' pressed!`);
-                const dataToSend = direction; // Update with the data you want to send
-                ws.send(dataToSend);
-                keyIsPressed[direction] = true;
-            }
-        });
+        // backwardButton.addEventListener("mouseup", () => {
+        //     ws1.send('s');
+        // });
 
-        document.addEventListener("keyup", function (event) {
-            const direction = getDirection(event.key);
+        // const forwardButton = document.getElementById("forward");
 
-            if (direction) {
-                console.log(`Key '${direction}' released!`);
-                const dataToSend = 's'; // Update with the data you want to send
-                 ws.send(dataToSend);
-                keyIsPressed[direction] = false;
-            }
-        });
+        // forwardButton.addEventListener("mousedown", () => {
+        //     ws1.send('u');
+        // });
 
-        function getDirection(key) {
-            switch (key) {
-                case 'ArrowUp':
-                    return 'u';
-                case 'ArrowDown':
-                    return 'd';
-                case 'ArrowLeft':
-                    return 'l';
-                case 'ArrowRight':
-                    return 'r';
-                case ' ':
-                    return 's';
-                default:
-                    return null;
-            }
-        }
+        // forwardButton.addEventListener("mouseup", () => {
+        //     ws1.send('s');
+        // });
+
+        // const leftButton = document.getElementById("left");
+
+        // leftButton.addEventListener("mousedown", () => {
+        //     ws1.send('l');
+        // });
+
+        // leftButton.addEventListener("mouseup", () => {
+        //     ws1.send('s');
+        // });
+
+        // const RightButton = document.getElementById("right");
+
+        // RightButton.addEventListener("mousedown", () => {
+        //     ws1.send('r');
+        // });
+
+        // RightButton.addEventListener("mouseup", () => {
+        //     ws1.send('s');
+        // });
+        // const stopButon = document.getElementById("stop");
+
+        // stopButon.addEventListener("mousedown", () => {
+        //     ws1.send('s');
+        // });
+
+        // stopButon.addEventListener("mouseup", () => {
+        //     ws1.send('s');
+        // });
+
+        // const buttons = document.querySelectorAll(".directionButton");
+        // let keyIsPressed = {};
+
+        // buttons.forEach(button => {
+        //     button.addEventListener("click", function () {
+        //         const direction = button.dataset.direction;
+        //         console.log(`Button '${direction}' clicked!`);
+        //     });
+        // });
+
+        // document.addEventListener("keydown", function (event) {
+        //     const direction = getDirection(event.key);
+
+        //     if (direction && !keyIsPressed[direction]) {
+        //         const websiteData = direction;
+        //         ws1.send(websiteData);
+        //         keyIsPressed[direction] = true;
+        //     }
+        // });
+
+        // document.addEventListener("keyup", function (event) {
+        //     const direction = getDirection(event.key);
+
+        //     if (direction) {
+        //         const websiteData = 's';
+        //         ws1.send(websiteData);
+        //         keyIsPressed[direction] = false;
+        //     }
+        // });
+
+        // function getDirection(key) {
+        //     switch (key) {
+        //         case 'ArrowUp':
+        //             return 'u';
+        //         case 'ArrowDown':
+        //             return 'd';
+        //         case 'ArrowLeft':
+        //             return 'l';
+        //         case 'ArrowRight':
+        //             return 'r';
+        //         case ' ':
+        //             return 's';
+        //         default:
+        //             return null;
+        //     }
+        // }
 
 
         // others
@@ -537,6 +662,7 @@
     </script>
     <script>
         //-------------------------------------map-----------------------------------------//
+    
         let request;
         function initMap() {
             const map = new google.maps.Map(document.getElementById('map'), {
@@ -547,19 +673,19 @@
             const directionsRenderer = new google.maps.DirectionsRenderer();
             directionsRenderer.setMap(map);
             const pointA = new google.maps.LatLng(window.deslati, window.deslongi);
-            const pointB = new google.maps.LatLng(22.897111, 89.502159);
+            const pointB = new google.maps.LatLng(window.slati, window.slongi);
 
             // Create markers for both points
             const markerA = new google.maps.Marker({
                 position: pointA,
                 map: map,
-                title: 'Point A',
+                title: 'Destination',
             });
 
             const markerB = new google.maps.Marker({
                 position: pointB,
                 map: map,
-                title: 'Point B',
+                title: 'Source',
             });
 
             request = {
@@ -576,6 +702,36 @@
                 }
             });
         }
+        
+function addMarker(position, title, color) {
+    const marker = new google.maps.Marker({
+        position: position,
+        map: map,
+        title: title,
+        icon: getMarkerIcon(color),
+    });
+}
+
+function clearMarkers() {
+    // Loop through all markers on the map and set their map property to null
+    markers.forEach(marker => {
+        marker.setMap(null);
+    });
+
+    // Clear the markers array
+    markers = [];
+}
+
+function getMarkerIcon(color) {
+    return {
+        path: google.maps.SymbolPath.CIRCLE,
+        fillColor: color,
+        fillOpacity: 1,
+        scale: 5,
+        strokeColor: 'white',
+        strokeWeight: 1,
+    };
+}
 
     </script>
 </body>

@@ -9,6 +9,7 @@ import androidx.core.content.FileProvider;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.ProgressDialog;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
@@ -110,6 +111,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void uploadata() {
+        ProgressDialog progressDialog;
+        progressDialog = new ProgressDialog(MainActivity.this);
+        progressDialog.setMessage("Loading...");
+        progressDialog.setCancelable(false); // Prevent user from dismissing the dialog
+        progressDialog.show();
         SimpleDateFormat format = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss", Locale.CANADA);
         Date now = new Date();
         String filename = format.format(now);
@@ -126,22 +132,31 @@ public class MainActivity extends AppCompatActivity {
                             databaseReference.child(key).setValue(upload).addOnSuccessListener(new OnSuccessListener<Void>() {
                                 @Override
                                 public void onSuccess(Void unused) {
+                                    progressDialog.dismiss();
+                                    locator.setText(""); // Clears the text in locator
+                                    result.setText("");  // Clears the text in result
+                                    confidence.setText(""); // Clears the text in confidence
+                                    imageView.setImageResource(0); // Clears the image in imageView
+
                                     Toast.makeText(MainActivity.this, "Successfully Sent", Toast.LENGTH_SHORT).show();
+
                                 }
                             }).addOnFailureListener(new OnFailureListener() {
                                 @Override
                                 public void onFailure(@NonNull Exception e) {
+                                    progressDialog.dismiss();
                                     Toast.makeText(MainActivity.this, "Failed to Sent", Toast.LENGTH_SHORT).show();
                                 }
                             });
                         } catch (Exception e) {
+                            progressDialog.dismiss();
                             Toast.makeText(MainActivity.this, "error:" + e, Toast.LENGTH_SHORT).show();
                         }
                     }
                 }).addOnFailureListener(new OnFailureListener() {
                     @Override
                     public void onFailure(@NonNull Exception e) {
-
+                        progressDialog.dismiss();
                         Toast.makeText(MainActivity.this, "Failed to Sent", Toast.LENGTH_SHORT).show();
 
 
